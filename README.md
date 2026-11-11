@@ -122,7 +122,9 @@ npm run android:apk
 Google sign-in in Android uses the system browser and returns to the app through
 the `dz.loupgarou.game://auth` deep link. Notification permission is requested
 from the in-app notifications panel; Android notifications are generated while
-the app is active and polling for account notifications.
+the app is active and polling for account notifications. The API allows
+Capacitor's local WebView origins (`https://localhost` and
+`capacitor://localhost`) so native sign-in completion can exchange its code.
 
 ### Android app updates
 

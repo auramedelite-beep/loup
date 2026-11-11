@@ -26,6 +26,8 @@ const server = http.createServer(app);
 
 const allowedOrigins = new Set([
   ...config.clientOrigins,
+  'https://localhost',
+  'capacitor://localhost',
   ...(config.isProduction ? [] : ['http://localhost:5173', 'http://127.0.0.1:5173']),
 ]);
 
