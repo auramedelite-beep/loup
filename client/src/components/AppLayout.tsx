@@ -44,6 +44,8 @@ const LINKS = [
 function UserMenu() {
   const { t } = useTranslation();
   const { user, isAdmin, logout } = useAuth();
+  const { settings, toggleMusic } = useSettings();
+  const { room } = useSocket();
   const navigate = useNavigate();
   const toast = useToast();
   const [open, setOpen] = useState(false);
@@ -116,6 +118,7 @@ function UserMenu() {
                 </p>
               </div>
             </div>
+            {!room && <SoundMenuItem enabled={settings.musicEnabled} onClick={toggleMusic} />}
             <MenuLink to={`/profile/${user.id}`} icon={<UserIcon size={15} />} onClick={() => setOpen(false)}>
               {t('nav.profile')}
             </MenuLink>
@@ -145,6 +148,24 @@ function UserMenu() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function SoundMenuItem({ enabled, onClick }: { enabled: boolean; onClick: () => void }) {
+  const { t } = useTranslation();
+  const Icon = enabled ? Music2 : VolumeX;
+
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      aria-pressed={enabled}
+      className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-start text-sm text-parchment-200 transition-colors hover:bg-white/[0.06] hover:text-gold-300"
+    >
+      <Icon size={15} />
+      {t(enabled ? 'settings.turnMusicOff' : 'settings.turnMusicOn')}
+    </button>
   );
 }
 
@@ -293,18 +314,6 @@ export function NavBar() {
 
         <div className={cn('flex shrink-0 items-center gap-1.5 sm:gap-2', !room && 'ms-auto')}>
           <NotificationCenter />
-          {!room && (
-            <button
-              type="button"
-              className="btn-icon"
-              onClick={toggleMusic}
-              aria-label={t(settings.musicEnabled ? 'settings.turnMusicOff' : 'settings.turnMusicOn')}
-              aria-pressed={settings.musicEnabled}
-              title={t(settings.musicEnabled ? 'settings.turnMusicOff' : 'settings.turnMusicOn')}
-            >
-              {settings.musicEnabled ? <Music2 size={17} /> : <VolumeX size={17} />}
-            </button>
-          )}
           <span
             className={cn('hidden h-2 w-2 rounded-full sm:block', connected ? 'bg-emerald-400' : 'bg-blood-400')}
             title={connected ? t('common.online') : t('common.offline')}
@@ -366,6 +375,12 @@ export function NavBar() {
                   <LogIn size={16} />
                   {t('nav.login')}
                 </NavLink>
+              )}
+              {!room && !user && (
+                <SoundMenuItem
+                  enabled={settings.musicEnabled}
+                  onClick={toggleMusic}
+                />
               )}
             </div>
           </motion.nav>
