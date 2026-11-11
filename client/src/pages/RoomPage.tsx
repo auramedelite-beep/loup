@@ -307,7 +307,7 @@ function LobbyRender({
   const modeOptions = ['classic', 'ranked', 'custom', 'quick', 'friends', 'practice'] as const;
 
   return (
-    <div className="space-y-6 pt-6 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-4 pt-3 sm:space-y-6 sm:pt-6">
       {/* Header */}
       <header className="flex items-center justify-between gap-4">
         <div>
@@ -663,7 +663,7 @@ function GameRender({
         <div className="mt-6">
           <h3 className="font-display text-base font-semibold text-parchment-100">{t('game.playersAlive', { count: alivePlayers.length })}</h3>
           <p className="text-mist text-sm">{t('game.day', { day: game.day })}</p>
-          <ChatPanel height="h-[350px]" />
+          <ChatPanel height="h-[min(55dvh,350px)] min-h-[220px]" />
         </div>
       </div>
     );
@@ -877,7 +877,7 @@ function NightPhase({
               ))}
             </div>
           )}
-          <div className="flex justify-center gap-2">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-center">
             {prompt.canSkip && <button type="button" className="btn-ghost" disabled={submitting} onClick={() => void submit(true)}>{t('game.skipAction')}</button>}
             <button type="button" className="btn-primary" disabled={submitting || (!prompt.canSkip && !targetId)} onClick={() => void submit()}>{t('game.confirmAction')}</button>
           </div>

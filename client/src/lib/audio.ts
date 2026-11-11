@@ -187,6 +187,13 @@ class AudioManager {
     this.musicAudio.loop = true;
     this.musicAudio.preload = 'auto';
     this.musicAudio.volume = Math.min(1, this.musicVolume * 2);
+    this.musicAudio.onended = () => {
+      if (!this.enabled || !this.musicEnabled || !this.musicAllowed) return;
+      this.musicAudio!.currentTime = 0;
+      void this.musicAudio!.play().catch((error: unknown) => {
+        console.error('[audio] Unable to resume background music', error);
+      });
+    };
     void this.musicAudio.play().catch((error: unknown) => {
       console.error('[audio] Unable to play background music', error);
     });

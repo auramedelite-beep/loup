@@ -108,12 +108,31 @@ and set `CLIENT_ORIGIN` on the server to the Netlify site origin. The game
 server uses SQLite, so use persistent storage for its `DATABASE_PATH`; an
 ephemeral filesystem can lose accounts and game data after a restart.
 
+### Android APK
+
+The Android app packages the web client and connects to the game server over
+the internet. It requires Node.js, Android Studio with the Android SDK, and the
+JDK bundled with Android Studio. Build a debug APK with:
+
+```bash
+npm install
+npm run android:apk
+```
+
+The APK is written to
+`android/app/build/outputs/apk/debug/app-debug.apk`. This debug-signed APK can
+be installed directly for testing; publishing on Google Play requires a
+separately signed release build. Set the server origin in
+`client/.env.production` before building if it changes. Android launcher icons
+and installable-web-app icons are generated from the supplied wolf artwork.
+
 ### Available Scripts
 
 | Script | Description |
 |--------|-------------|
 | `npm run dev` | Start dev server + client with Vite |
 | `npm run build` | Build both server (TS -> dist-server) and client (Vite -> dist) |
+| `npm run android:apk` | Build the web client and a debug Android APK |
 | `npm run typecheck` | Run TypeScript type check |
 | `npm run test` | Run vitest tests (27 passing) |
 | `npm run seed` | Seed database with default admin user |

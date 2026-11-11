@@ -63,9 +63,9 @@ function UserMenu() {
   if (!user) {
     return (
       <div className="flex items-center gap-2">
-        <Link to="/auth/login" className="btn-ghost btn-sm">
+        <Link to="/auth/login" className="btn-ghost btn-sm min-w-10 px-2 sm:px-3" aria-label={t('nav.login')}>
           <LogIn size={14} />
-          {t('nav.login')}
+          <span className="hidden sm:inline">{t('nav.login')}</span>
         </Link>
       </div>
     );
@@ -190,7 +190,7 @@ export function NavBar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-ink-950/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-[62px] max-w-7xl items-center gap-3 px-3 sm:px-5">
+      <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-2.5 sm:h-[62px] sm:gap-3 sm:px-5">
         <Link to="/" className="shrink-0" aria-label={t('common.appName')}>
           <Logo />
         </Link>
@@ -230,7 +230,7 @@ export function NavBar() {
           </Link>
         )}
 
-        <div className={cn('flex items-center gap-2', !room && 'ms-auto')}>
+        <div className={cn('flex shrink-0 items-center gap-1.5 sm:gap-2', !room && 'ms-auto')}>
           {!room && (
             <button
               type="button"
@@ -338,7 +338,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
         تجاوز إلى المحتوى
       </a>
       <NavBar />
-      <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-3 py-5 sm:px-5 sm:py-8">
+      <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-2.5 py-4 sm:px-5 sm:py-8">
         {children ?? <Outlet />}
       </main>
       <Footer />

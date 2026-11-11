@@ -57,7 +57,7 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    <div className="mx-auto max-w-3xl p-4 sm:p-6">
       <PageHeader
         eyebrow={t('common.appName')}
         title={t('settings.title')}
@@ -88,7 +88,7 @@ export function SettingsPage() {
         </Field>
 
         {/* Save button */}
-        <div className="mt-6 flex gap-2">
+        <div className="mt-6 flex flex-wrap gap-2">
           <button
             type="submit"
             className="btn-primary"

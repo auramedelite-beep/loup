@@ -105,9 +105,9 @@ export function HomePage() {
   ];
 
   return (
-    <div className="space-y-14 sm:space-y-20">
+    <div className="space-y-10 sm:space-y-20">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-[2rem] border border-gold-500/15 bg-ink-900/50 px-5 py-10 shadow-card sm:px-10 sm:py-16">
+      <section className="relative overflow-hidden rounded-2xl border border-gold-500/15 bg-ink-900/50 px-4 py-8 shadow-card sm:rounded-[2rem] sm:px-10 sm:py-16">
         <div className="pointer-events-none absolute inset-0 bg-radial-blood opacity-70" aria-hidden />
         <div className="pointer-events-none absolute -end-16 -top-24 h-72 w-72 rounded-full border border-gold-500/10 sm:h-96 sm:w-96">
           <div className="absolute inset-6 rounded-full border border-gold-500/10" />
@@ -123,7 +123,7 @@ export function HomePage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="font-display text-4xl font-bold leading-[1.05] text-parchment-100 sm:text-6xl"
+            className="break-words font-display text-3xl font-bold leading-tight text-parchment-100 sm:text-6xl"
           >
             {t('home.heroTitle')}
             <span className="mt-2 block bg-gradient-to-r from-gold-300 via-gold-400 to-gold-600 bg-clip-text text-transparent">
@@ -134,16 +134,16 @@ export function HomePage() {
             {t('home.heroSubtitle')}
           </p>
 
-          <div className="mt-7 flex flex-wrap items-center gap-2.5">
-            <button type="button" onClick={() => void quickPlay()} className="btn-primary btn-lg" disabled={busy !== null}>
+          <div className="mt-6 flex flex-col items-stretch gap-2.5 sm:mt-7 sm:flex-row sm:flex-wrap sm:items-center">
+            <button type="button" onClick={() => void quickPlay()} className="btn-primary btn-lg w-full sm:w-auto" disabled={busy !== null}>
               <Zap size={18} />
               {busy === 'quick' ? t('rooms.searching') : t('home.quickPlay')}
             </button>
-            <Link to="/rooms" className="btn-ghost btn-lg">
+            <Link to="/rooms" className="btn-ghost btn-lg w-full sm:w-auto">
               {t('home.browseRooms')}
               <ArrowRight size={17} className="rtl:rotate-180" />
             </Link>
-            <button type="button" onClick={() => void practice()} className="btn-subtle btn-lg" disabled={busy !== null}>
+            <button type="button" onClick={() => void practice()} className="btn-subtle btn-lg w-full sm:w-auto" disabled={busy !== null}>
               <Bot size={17} />
               {t('home.practice')}
             </button>
@@ -166,14 +166,14 @@ export function HomePage() {
             </Link>
           )}
 
-          <dl className="mt-9 grid max-w-lg grid-cols-2 gap-3 sm:grid-cols-4">
+          <dl className="mt-7 grid max-w-lg grid-cols-2 gap-2 sm:mt-9 sm:grid-cols-4 sm:gap-3">
             {[
               { label: t('home.statPlayers'), value: stats?.players },
               { label: t('home.statMatches'), value: stats?.matches },
               { label: t('home.statRooms'), value: stats?.rooms },
               { label: t('home.statLive'), value: stats?.liveGames },
             ].map((item) => (
-              <div key={item.label} className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5">
+              <div key={item.label} className="rounded-xl border border-white/[0.06] bg-black/20 px-2.5 py-2.5 sm:px-3">
                 <dd className="font-display text-xl font-bold tabular-nums text-gold-300">
                   {typeof item.value === 'number' ? formatNumber(item.value) : '—'}
                 </dd>
@@ -199,7 +199,7 @@ export function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-60px' }}
               transition={{ duration: 0.4 }}
-              className="card p-5"
+              className="card p-4 sm:p-5"
             >
               <span className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gold-500/20 bg-gold-500/10 text-gold-300">
                 <feature.icon size={18} />

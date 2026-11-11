@@ -177,7 +177,7 @@ export function Modal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 18, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className={`card safe-bottom my-0 w-full ${widths[size]} max-h-[92vh] overflow-y-auto rounded-b-none sm:my-6 sm:rounded-3xl`}
+            className={`card safe-bottom my-2 w-[calc(100%-1rem)] ${widths[size]} max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-3xl sm:my-6 sm:w-full sm:max-h-[92vh]`}
           >
             <div className="sticky top-0 z-10 flex items-start gap-3 border-b border-white/[0.06] bg-ink-900/95 px-5 py-4 backdrop-blur-xl">
               <div className="min-w-0 flex-1">
