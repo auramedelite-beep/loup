@@ -94,6 +94,20 @@ cd server && npm run dev
 cd client && npm run dev  # Vite on port 5173
 ```
 
+### Netlify frontend
+
+The repository includes `netlify.toml` for building the Vite frontend from the
+repository root and serving client-side routes. Connect the GitHub repository
+to Netlify and deploy the `main` branch. To let visitors access the site, turn
+off Netlify team-only access with **Make public**.
+
+Netlify only hosts the frontend. The API and Socket.IO game server must run on
+a separate Node.js host that supports persistent WebSocket connections. Set
+`VITE_API_URL` in Netlify's build environment to that server's HTTPS origin,
+and set `CLIENT_ORIGIN` on the server to the Netlify site origin. The game
+server uses SQLite, so use persistent storage for its `DATABASE_PATH`; an
+ephemeral filesystem can lose accounts and game data after a restart.
+
 ### Available Scripts
 
 | Script | Description |
