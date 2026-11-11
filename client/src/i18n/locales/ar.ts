@@ -885,6 +885,8 @@ const ar = {
     languageHint: 'العربية هي الافتراضية. يتغير اتجاه التصميم تلقائيًا.',
     audio: 'الصوت',
     music: 'الموسيقى المحيطة',
+    turnMusicOn: 'تشغيل الموسيقى',
+    turnMusicOff: 'إيقاف الموسيقى',
     sound: 'المؤثرات الصوتية',
     soundVolume: 'مستوى الصوت',
     volumeLevel: '{{value}}٪',

@@ -18,21 +18,17 @@ export type SoundName =
 
 type Ctx = AudioContext & { createGain: () => GainNode };
 
-/**
- * Fully synthesised audio — no external assets, works offline, respects
- * per-user volume and the browser autoplay policy.
- */
+/** Synthesised sound effects and licensed background ambience. */
 class AudioManager {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
-  private musicGain: GainNode | null = null;
-  private musicNodes: { osc: OscillatorNode; gain: GainNode }[] = [];
-  private musicTimer: number | null = null;
-  private musicStep = 0;
+  private musicAudio: HTMLAudioElement | null = null;
 
   soundVolume = 0.6;
   musicVolume = 0.35;
   enabled = true;
+  musicEnabled = true;
+  musicAllowed = true;
 
   private ensure(): AudioContext | null {
     if (typeof window === 'undefined') return null;
@@ -44,9 +40,6 @@ class AudioManager {
         this.master = this.ctx.createGain();
         this.master.gain.value = 0.9;
         this.master.connect(this.ctx.destination);
-        this.musicGain = this.ctx.createGain();
-        this.musicGain.gain.value = this.musicVolume * 0.12;
-        this.musicGain.connect(this.master);
       } catch {
         return null;
       }
@@ -55,18 +48,27 @@ class AudioManager {
     return this.ctx;
   }
 
-  configure(options: { sound?: number; music?: number; enabled?: boolean }): void {
+  configure(options: { sound?: number; music?: number; enabled?: boolean; musicEnabled?: boolean }): void {
     if (typeof options.sound === 'number') this.soundVolume = Math.min(1, Math.max(0, options.sound));
     if (typeof options.music === 'number') this.musicVolume = Math.min(1, Math.max(0, options.music));
     if (typeof options.enabled === 'boolean') {
       this.enabled = options.enabled;
       if (!this.enabled) this.stopMusic();
     }
-    if (this.musicGain) this.musicGain.gain.value = this.musicVolume * 0.12;
+    if (typeof options.musicEnabled === 'boolean') {
+      this.musicEnabled = options.musicEnabled;
+      if (!this.musicEnabled) this.stopMusic();
+    }
+    if (this.musicAudio) this.musicAudio.volume = Math.min(1, this.musicVolume * 2);
   }
 
   init(): void {
     this.ensure();
+  }
+
+  setMusicAllowed(allowed: boolean): void {
+    this.musicAllowed = allowed;
+    if (!allowed) this.stopMusic();
   }
 
   play(name: SoundName): void {
@@ -178,73 +180,21 @@ class AudioManager {
     };
   }
 
-  /** Slow, dark ambient drone. Call after the first user gesture. */
+  /** Play the licensed horror ambience after an explicit user gesture. */
   startMusic(): void {
-    if (!this.enabled || this.musicVolume <= 0) return;
-    const ctx = this.ensure();
-    if (!ctx || !this.musicGain || this.musicNodes.length > 0) return;
-    const chord = [
-      [73.42, 110],
-      [65.41, 98],
-      [82.41, 123.47],
-      [61.74, 92.5],
-    ];
-    const playChord = (index: number) => {
-      if (!this.musicGain || !this.ctx) return;
-      const now = this.ctx.currentTime;
-      for (const node of this.musicNodes) {
-        try {
-          node.gain.gain.cancelScheduledValues(now);
-          node.gain.gain.exponentialRampToValueAtTime(0.0001, now + 3);
-          node.osc.stop(now + 3.4);
-        } catch {
-          /* ignore */
-        }
-      }
-      this.musicNodes = [];
-      const [root, fifth] = chord[index % chord.length];
-      for (const frequency of [root, fifth, root * 2]) {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 420;
-        osc.type = frequency === root ? 'sine' : 'triangle';
-        osc.frequency.value = frequency;
-        osc.detune.value = (Math.random() - 0.5) * 8;
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(frequency === root ? 0.9 : 0.4, now + 4);
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(this.musicGain);
-        osc.start(now);
-        this.musicNodes.push({ osc, gain });
-      }
-    };
-    playChord(this.musicStep);
-    this.musicTimer = window.setInterval(() => {
-      this.musicStep += 1;
-      playChord(this.musicStep);
-    }, 14_000);
+    if (!this.enabled || !this.musicEnabled || !this.musicAllowed || this.musicVolume <= 0) return;
+    this.musicAudio ??= new Audio(`${import.meta.env.BASE_URL}audio/mixkit-horror-ambience-2482.wav`);
+    this.musicAudio.loop = true;
+    this.musicAudio.preload = 'auto';
+    this.musicAudio.volume = Math.min(1, this.musicVolume * 2);
+    void this.musicAudio.play().catch((error: unknown) => {
+      console.error('[audio] Unable to play background music', error);
+    });
   }
 
   stopMusic(): void {
-    if (this.musicTimer !== null) {
-      window.clearInterval(this.musicTimer);
-      this.musicTimer = null;
-    }
-    const ctx = this.ctx;
-    const now = ctx?.currentTime ?? 0;
-    for (const node of this.musicNodes) {
-      try {
-        node.gain.gain.cancelScheduledValues(now);
-        node.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
-        node.osc.stop(now + 1);
-      } catch {
-        /* ignore */
-      }
-    }
-    this.musicNodes = [];
+    this.musicAudio?.pause();
+    if (this.musicAudio) this.musicAudio.currentTime = 0;
   }
 
   suspend(): void {

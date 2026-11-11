@@ -9,17 +9,21 @@ import {
   LogIn,
   LogOut,
   Menu,
+  Music2,
   Settings as SettingsIcon,
   Shield,
   Trophy,
   User as UserIcon,
   Users,
+  VolumeX,
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocket } from '@/contexts/SocketContext';
 import { useToast } from '@/contexts/ToastContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import { audio } from '@/lib/audio';
 import { Avatar } from './Avatar';
 import { Logo } from './Logo';
 import { cn } from '@/lib/format';
@@ -166,12 +170,23 @@ export function NavBar() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { room, connected } = useSocket();
+  const { settings, toggleMusic } = useSettings();
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const wasInRoom = useRef(Boolean(room));
 
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    audio.setMusicAllowed(!room);
+    if (!room && wasInRoom.current && settings.musicEnabled && !settings.reducedMotion && settings.music > 0) {
+      audio.init();
+      audio.startMusic();
+    }
+    wasInRoom.current = Boolean(room);
+  }, [room, settings.music, settings.musicEnabled, settings.reducedMotion]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-ink-950/80 backdrop-blur-xl">
@@ -216,6 +231,18 @@ export function NavBar() {
         )}
 
         <div className={cn('flex items-center gap-2', !room && 'ms-auto')}>
+          {!room && (
+            <button
+              type="button"
+              className="btn-icon"
+              onClick={toggleMusic}
+              aria-label={t(settings.musicEnabled ? 'settings.turnMusicOff' : 'settings.turnMusicOn')}
+              aria-pressed={settings.musicEnabled}
+              title={t(settings.musicEnabled ? 'settings.turnMusicOff' : 'settings.turnMusicOn')}
+            >
+              {settings.musicEnabled ? <Music2 size={17} /> : <VolumeX size={17} />}
+            </button>
+          )}
           <span
             className={cn('hidden h-2 w-2 rounded-full sm:block', connected ? 'bg-emerald-400' : 'bg-blood-400')}
             title={connected ? t('common.online') : t('common.offline')}

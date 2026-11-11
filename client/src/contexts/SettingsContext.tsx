@@ -14,6 +14,7 @@ import { useAuth } from './AuthContext';
 
 export interface AppSettings {
   music: number;
+  musicEnabled: boolean;
   sound: number;
   animations: boolean;
   notifications: boolean;
@@ -24,6 +25,7 @@ export interface AppSettings {
 interface SettingsContextValue {
   settings: AppSettings;
   update: (patch: Partial<AppSettings>) => void;
+  toggleMusic: () => void;
   save: () => Promise<void>;
   saving: boolean;
   requestNotifications: () => Promise<void>;
@@ -33,6 +35,7 @@ const STORAGE_KEY = 'lgdz.settings';
 
 const DEFAULTS: AppSettings = {
   music: 0.3,
+  musicEnabled: true,
   sound: 0.65,
   animations: true,
   notifications: false,
@@ -49,6 +52,7 @@ function readStored(): Partial<AppSettings> {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     const next: Partial<AppSettings> = {};
     if (typeof parsed.music === 'number') next.music = Math.min(1, Math.max(0, parsed.music));
+    if (typeof parsed.musicEnabled === 'boolean') next.musicEnabled = parsed.musicEnabled;
     if (typeof parsed.sound === 'number') next.sound = Math.min(1, Math.max(0, parsed.sound));
     if (typeof parsed.animations === 'boolean') next.animations = parsed.animations;
     if (typeof parsed.notifications === 'boolean') next.notifications = parsed.notifications;
@@ -72,6 +76,7 @@ function fromUserSettings(raw: Record<string, unknown> | undefined): Partial<App
   if (!raw) return {};
   const next: Partial<AppSettings> = {};
   if (typeof raw.music === 'number') next.music = Math.min(1, Math.max(0, raw.music));
+  if (typeof raw.musicEnabled === 'boolean') next.musicEnabled = raw.musicEnabled;
   if (typeof raw.sound === 'number') next.sound = Math.min(1, Math.max(0, raw.sound));
   if (typeof raw.animations === 'boolean') next.animations = raw.animations;
   if (typeof raw.notifications === 'boolean') next.notifications = raw.notifications;
@@ -101,7 +106,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [user?.id]);
 
   useEffect(() => {
-    audio.configure({ sound: settings.sound, music: settings.music, enabled: !settings.reducedMotion });
+    audio.configure({
+      sound: settings.sound,
+      music: settings.music,
+      enabled: !settings.reducedMotion,
+      musicEnabled: settings.musicEnabled,
+    });
     store(settings);
     const root = document.documentElement;
     root.classList.toggle('reduce-motion', settings.reducedMotion || !settings.animations);
@@ -114,7 +124,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       if (!armed) return;
       armed = false;
       audio.init();
-      if (settings.music > 0) audio.startMusic();
+      if (settings.musicEnabled && settings.music > 0 && !settings.reducedMotion) audio.startMusic();
     };
     window.addEventListener('pointerdown', onGesture, { once: true });
     window.addEventListener('keydown', onGesture, { once: true });
@@ -122,11 +132,27 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('pointerdown', onGesture);
       window.removeEventListener('keydown', onGesture);
     };
-  }, [settings.music]);
+  }, [settings.music, settings.musicEnabled, settings.reducedMotion]);
 
   const update = useCallback((patch: Partial<AppSettings>) => {
     setSettings((current) => ({ ...current, ...patch }));
   }, []);
+
+  const toggleMusic = useCallback(() => {
+    const musicEnabled = !settings.musicEnabled;
+    setSettings((current) => ({ ...current, musicEnabled }));
+    audio.configure({
+      music: settings.music,
+      enabled: !settings.reducedMotion,
+      musicEnabled,
+    });
+    if (musicEnabled && !settings.reducedMotion && settings.music > 0) {
+      audio.init();
+      audio.startMusic();
+    } else {
+      audio.stopMusic();
+    }
+  }, [settings.music, settings.musicEnabled, settings.reducedMotion]);
 
   const save = useCallback(async () => {
     store(settings);
@@ -156,8 +182,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [update]);
 
   const value = useMemo<SettingsContextValue>(
-    () => ({ settings, update, save, saving, requestNotifications }),
-    [settings, update, save, saving, requestNotifications],
+    () => ({ settings, update, toggleMusic, save, saving, requestNotifications }),
+    [settings, update, toggleMusic, save, saving, requestNotifications],
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
