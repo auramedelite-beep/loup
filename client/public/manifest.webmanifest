@@ -1,0 +1,40 @@
+{
+  "name": "LOUP-GAROU DZ — الذئاب",
+  "short_name": "Loup-Garou DZ",
+  "description": "لعبة الذئاب الجزائرية في الوقت الحقيقي — أدوار سرية، ليالٍ مرعبة، وقرى لا تنام.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#07070b",
+  "theme_color": "#0b0b12",
+  "categories": ["games", "social"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "غرف اللعب",
+      "short_name": "غرف",
+      "url": "/rooms"
+    },
+    {
+      "name": "ملفي",
+      "short_name": "ملف",
+      "url": "/profile"
+    }
+  ]
+}

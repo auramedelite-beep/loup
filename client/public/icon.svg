@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="LOUP-GAROU DZ">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#221a2c"/>
+      <stop offset="60%" stop-color="#0e0b16"/>
+      <stop offset="100%" stop-color="#07070b"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f3e0a0"/>
+      <stop offset="50%" stop-color="#d4af37"/>
+      <stop offset="100%" stop-color="#8a6a1f"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <circle cx="256" cy="238" r="150" fill="none" stroke="#d4af37" stroke-opacity="0.25" stroke-width="2"/>
+  <circle cx="256" cy="238" r="126" fill="none" stroke="#d4af37" stroke-opacity="0.4" stroke-width="1.5"/>
+  <!-- crescent moon -->
+  <path d="M340 92a104 104 0 1 0 62 188 88 88 0 0 1-62-188z" fill="url(#gold)" opacity="0.9"/>
+  <!-- wolf head -->
+  <g fill="url(#gold)">
+    <path d="M196 250l-38-104 76 52z"/>
+    <path d="M316 250l38-104-76 52z"/>
+    <path d="M256 168c-66 0-108 52-108 112 0 46 30 82 60 104l-18 34 54-22 12 26 12-26 54 22-18-34c30-22 60-58 60-104 0-60-42-112-108-112z"/>
+  </g>
+  <g fill="#0e0b16">
+    <path d="M256 300l-34 78 34-18 34 18z"/>
+  </g>
+  <circle cx="216" cy="266" r="13" fill="#e23b50"/>
+  <circle cx="296" cy="266" r="13" fill="#e23b50"/>
+  <text x="256" y="470" text-anchor="middle" font-family="Georgia, serif" font-size="40" letter-spacing="6" fill="url(#gold)">DZ</text>
+</svg>
