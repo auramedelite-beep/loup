@@ -129,12 +129,14 @@ Capacitor's local WebView origins (`https://localhost` and
 ### Android app updates
 
 The Android app checks `client/public/app-update.json` on launch and when it
-returns to the foreground. To publish an update, increment `versionCode` and
-`versionName` in `android/app/build.gradle`, update the manifest's version, build
-the APK, and copy it to `app-release/loup-garou-dz.apk`. Netlify publishes this
-file at the download URL in the manifest. Android downloads the APK and asks the
-user to confirm installation; uninstalling the previous app is not required.
-Updates must be signed with the same signing key as the installed app.
+returns to the foreground. Native updates use Android Download Manager, show
+download progress, can be resumed or cancelled, and open the Android installer
+when complete. To publish an update, increment `versionCode` and `versionName`
+in `android/app/build.gradle`, update the manifest's version, build the APK, and
+copy it to `app-release/loup-garou-dz.apk`. Netlify publishes this file at the
+download URL in the manifest. Android asks the user to confirm installation;
+uninstalling the previous app is not required. Updates must be signed with the
+same signing key as the installed app.
 
 The APK that predates the update checker cannot display its own update prompt.
 Install the first APK that includes the checker manually; later versions can
