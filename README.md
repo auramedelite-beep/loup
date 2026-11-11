@@ -79,7 +79,7 @@ GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
 GOOGLE_REDIRECT_URI=http://localhost:4000/api/auth/google/callback
 ```
 
-Create a Google OAuth 2.0 Web client in Google Cloud Console. Add `http://localhost:4000/api/auth/google/callback` as an authorized redirect URI, then set the client ID and secret above and restart the server. For deployment, use the public HTTPS callback URL instead.
+Create a Google OAuth 2.0 Web client in Google Cloud Console. Add `http://localhost:4000/api/auth/google/callback` as an authorized redirect URI for local development. In production, set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` on the API host, and add the exact public HTTPS callback (for example, `https://your-service.onrender.com/api/auth/google/callback`) as an authorized redirect URI. On Render, the callback defaults to the service URL from `RENDER_EXTERNAL_URL`; set `GOOGLE_REDIRECT_URI` explicitly if the Google Console uses a different URL. The API also needs `CLIENT_ORIGIN` set to the deployed frontend origin.
 
 ## 🚀 Development
 

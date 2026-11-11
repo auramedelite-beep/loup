@@ -24,8 +24,11 @@ import { useSocket } from '@/contexts/SocketContext';
 import { useToast } from '@/contexts/ToastContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { audio } from '@/lib/audio';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import { Avatar } from './Avatar';
 import { Logo } from './Logo';
+import { NotificationCenter } from './NotificationCenter';
 import { cn } from '@/lib/format';
 
 const LINKS = [
@@ -99,6 +102,7 @@ function UserMenu() {
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.15 }}
             role="menu"
+            data-back-dismiss="true"
             className="card-tight absolute end-0 top-full z-50 mt-2 w-60 overflow-hidden p-1.5 shadow-card"
           >
             <div className="flex items-center gap-2.5 border-b border-white/[0.06] px-2.5 pb-2.5 pt-1.5">
@@ -171,13 +175,68 @@ export function NavBar() {
   const { user } = useAuth();
   const { room, connected } = useSocket();
   const { settings, toggleMusic } = useSettings();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const wasInRoom = useRef(Boolean(room));
+  const pathname = useRef(location.pathname);
+
+  useEffect(() => {
+    pathname.current = location.pathname;
+  }, [location.pathname]);
 
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let disposed = false;
+    let removeListener: (() => Promise<void>) | undefined;
+    void CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+      const openOverlay = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-back-dismiss="true"], [role="dialog"]'),
+      ).find((element) => element.getClientRects().length > 0);
+      if (openOverlay) {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        return;
+      }
+      if (pathname.current !== '/') {
+        if (canGoBack) navigate(-1);
+        else navigate('/');
+        return;
+      }
+      if (canGoBack) navigate(-1);
+      else void CapacitorApp.exitApp();
+    })
+      .then((listener) => {
+        if (disposed) {
+          void listener.remove();
+          return;
+        }
+        removeListener = () => listener.remove();
+      })
+      .catch((error: unknown) => console.error('[android] Failed to register back-button handler', error));
+
+    return () => {
+      disposed = true;
+      if (removeListener) {
+        void removeListener().catch((error: unknown) =>
+          console.error('[android] Failed to remove back-button handler', error),
+        );
+      }
+    };
+  }, [navigate]);
 
   useEffect(() => {
     audio.setMusicAllowed(!room);
@@ -231,6 +290,7 @@ export function NavBar() {
         )}
 
         <div className={cn('flex shrink-0 items-center gap-1.5 sm:gap-2', !room && 'ms-auto')}>
+          <NotificationCenter />
           {!room && (
             <button
               type="button"
@@ -268,6 +328,7 @@ export function NavBar() {
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden border-t border-white/[0.06] bg-ink-950/95 lg:hidden"
             aria-label={t('nav.menu')}
+            data-back-dismiss="true"
           >
             <div className="grid grid-cols-2 gap-1.5 p-3">
               {LINKS.map((link) => (

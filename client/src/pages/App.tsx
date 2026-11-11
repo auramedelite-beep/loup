@@ -1,5 +1,7 @@
 import { Navigate, Route, Routes, NavLink } from 'react-router-dom';
 import { useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoadingBlock, Spinner } from '@/components/ui';
@@ -38,6 +40,19 @@ export function App() {
     if ('serviceWorker' in navigator) {
       void navigator.serviceWorker.register('/sw.js');
     }
+  }, []);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    void (async () => {
+      try {
+        await StatusBar.setOverlaysWebView({ overlay: false });
+        await StatusBar.setBackgroundColor({ color: '#0b0b12' });
+        await StatusBar.setStyle({ style: Style.Light });
+      } catch (error) {
+        console.error('[android] Failed to configure system status bar', error);
+      }
+    })();
   }, []);
 
   /* ── Set dir/lang for RTL ─────────────────────────────────────────────── */

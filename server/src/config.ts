@@ -7,6 +7,12 @@ function num(value: string | undefined, fallback: number): number {
 
 const isProduction = process.env.NODE_ENV === 'production';
 const port = num(process.env.PORT, 4000);
+const renderExternalUrl = process.env.RENDER_EXTERNAL_URL?.trim();
+const googleRedirectUri =
+  process.env.GOOGLE_REDIRECT_URI?.trim() ||
+  (renderExternalUrl
+    ? new URL('/api/auth/google/callback', renderExternalUrl).toString()
+    : `http://localhost:${port}/api/auth/google/callback`);
 
 if (isProduction && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 24)) {
   throw new Error('JWT_SECRET must be set to a strong random value (>= 24 chars) in production.');
@@ -32,5 +38,5 @@ export const config = {
   botFillTimeoutMs: Number(process.env.BOT_FILL_TIMEOUT_MS || 8000),
   googleClientId: process.env.GOOGLE_CLIENT_ID || '',
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI || `http://localhost:${port}/api/auth/google/callback`,
+  googleRedirectUri,
 };
