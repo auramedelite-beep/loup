@@ -31,6 +31,7 @@ import { Logo } from './Logo';
 import { NotificationCenter } from './NotificationCenter';
 import { AppUpdatePrompt } from './AppUpdatePrompt';
 import { cn } from '@/lib/format';
+import { APP_VERSION } from '@/lib/version';
 
 const LINKS = [
   { to: '/', key: 'nav.home', icon: Home, end: true },
@@ -383,7 +384,7 @@ export function Footer() {
         <p className="flex items-center gap-2">
           <span>LOUP-GAROU DZ</span>
           <span aria-hidden>·</span>
-          <span>{t('common.version')} 1.0.0</span>
+          <span>{t('common.version')} {APP_VERSION}</span>
         </p>
       </div>
     </footer>

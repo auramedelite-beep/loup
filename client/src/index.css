@@ -352,6 +352,25 @@ input[type='range']::-moz-range-thumb {
   padding-bottom: max(1rem, var(--safe-bottom));
 }
 
+.notification-panel {
+  position: fixed;
+  z-index: 50;
+  left: 0.5rem;
+  right: 0.5rem !important;
+  top: calc(env(safe-area-inset-top, 0px) + 3.75rem) !important;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+}
+
+@media (min-width: 640px) {
+  .notification-panel {
+    position: fixed;
+    left: auto;
+    bottom: auto;
+    width: 20rem;
+    max-height: min(32rem, calc(100dvh - 5rem));
+  }
+}
+
 /* ── Game screen ────────────────────────────────────────────────────────── */
 .phase-screen {
   @apply relative mx-auto w-full max-w-5xl min-w-0 overflow-hidden rounded-2xl border border-white/[0.08] bg-ink-900/75 p-4 shadow-card backdrop-blur-xl sm:rounded-3xl sm:p-6;

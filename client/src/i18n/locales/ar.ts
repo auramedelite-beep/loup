@@ -767,6 +767,7 @@ const ar = {
     title: 'ملفك',
     subtitle: 'أسطورتك، إحصائياتك، وقطيعك.',
     edit: 'تعديل الملف',
+    privateProfile: 'هذا الملف خاص ولا يمكن عرض إحصائياته.',
     memberSince: 'عضو منذ {{date}}',
     registered: 'مسجل',
     guestAccount: 'حساب ضيف',

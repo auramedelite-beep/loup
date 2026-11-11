@@ -90,7 +90,16 @@ profileRouter.patch('/me', updateLimiter, (req, res) => {
   }
   if (data.settings) {
     const allowed: Record<string, unknown> = {};
-    for (const key of ['music', 'sound', 'animations', 'notifications', 'reducedMotion', 'language', 'privacy']) {
+    for (const key of [
+      'music',
+      'musicEnabled',
+      'sound',
+      'animations',
+      'notifications',
+      'reducedMotion',
+      'language',
+      'privacy',
+    ]) {
       if (typeof data.settings[key] !== 'undefined') allowed[key] = data.settings[key];
     }
     const merged = { ...parseSettings(user.settings_json), ...allowed };

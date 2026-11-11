@@ -1,12 +1,16 @@
 import path from 'node:path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import packageJson from '../package.json';
 
 const apiTarget = process.env.VITE_DEV_API ?? 'http://localhost:4000';
 
 export default defineConfig({
   root: path.resolve(__dirname),
   plugins: [react()],
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),

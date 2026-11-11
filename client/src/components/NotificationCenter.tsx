@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Bell, Check, CheckCheck } from 'lucide-react';
@@ -24,7 +25,9 @@ export function NotificationCenter() {
   const [error, setError] = useState<string | null>(null);
   const seenIds = useRef(new Set<string>());
   const initialized = useRef(false);
-  const panelRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLElement | null>(null);
+  const [panelPosition, setPanelPosition] = useState({ top: 0, right: 8 });
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -106,8 +109,17 @@ export function NotificationCenter() {
 
   useEffect(() => {
     if (!open) return;
+    const updatePosition = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (rect) setPanelPosition({ top: rect.bottom + 8, right: window.innerWidth - rect.right });
+    };
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
     const onPointerDown = (event: PointerEvent) => {
-      if (panelRef.current && !panelRef.current.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (panelRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
+      setOpen(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setOpen(false);
@@ -115,6 +127,8 @@ export function NotificationCenter() {
     document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
     return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
       document.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
     };
@@ -151,11 +165,16 @@ export function NotificationCenter() {
   };
 
   return (
-    <div className="relative" ref={panelRef}>
+    <div className="relative">
       <button
+        ref={triggerRef}
         type="button"
         className="btn-icon relative"
         onClick={() => {
+          if (!open) {
+            const rect = triggerRef.current?.getBoundingClientRect();
+            if (rect) setPanelPosition({ top: rect.bottom + 8, right: window.innerWidth - rect.right });
+          }
           setOpen((value) => !value);
           if (!open) void loadNotifications();
         }}
@@ -171,11 +190,13 @@ export function NotificationCenter() {
         )}
       </button>
 
-      {open && (
+      {open && createPortal(
         <section
+          ref={panelRef}
           id="notification-panel"
           data-back-dismiss="true"
-          className="card-tight absolute end-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-1.5rem)] overflow-hidden shadow-card"
+          className="notification-panel card-tight flex flex-col overflow-hidden shadow-card"
+          style={{ top: panelPosition.top, right: panelPosition.right }}
           aria-label={t('notifications.title')}
         >
           <div className="flex items-center justify-between border-b border-white/[0.06] px-3 py-2.5">
@@ -204,7 +225,7 @@ export function NotificationCenter() {
               {t(`errors.${error}`, { defaultValue: t('errors.unknown_error') })}
             </p>
           )}
-          <ul className="max-h-80 divide-y divide-white/[0.05] overflow-y-auto">
+          <ul className="min-h-0 flex-1 divide-y divide-white/[0.05] overflow-y-auto overscroll-contain">
             {notifications.length === 0 ? (
               <li className="px-3 py-6 text-center text-xs text-mist">{t('notifications.empty')}</li>
             ) : (
@@ -234,7 +255,8 @@ export function NotificationCenter() {
               ))
             )}
           </ul>
-        </section>
+        </section>,
+        document.body,
       )}
     </div>
   );

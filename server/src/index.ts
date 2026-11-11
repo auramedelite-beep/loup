@@ -83,7 +83,7 @@ app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
     name: 'LOUP-GAROU DZ',
-    version: '1.0.0',
+    version: '1.2.1',
     uptime: Math.round(process.uptime()),
     at: Date.now(),
     maintenance: getSetting('maintenance_mode', 'false') === 'true',
