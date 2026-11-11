@@ -42,8 +42,9 @@ function authResponse(user: ReturnType<typeof findUserById>) {
 const GOOGLE_STATE_COOKIE = 'lgdz_google_state';
 const GOOGLE_STATE_TTL = 10 * 60 * 1000;
 const GOOGLE_CODE_TTL = 2 * 60 * 1000;
-const googleStates = new Map<string, { next: string; expiresAt: number }>();
+const googleStates = new Map<string, { next: string; nativeApp: boolean; expiresAt: number }>();
 const googleCodes = new Map<string, { auth: ReturnType<typeof authResponse>; expiresAt: number }>();
+const NATIVE_AUTH_SCHEME = 'dz.loupgarou.game://auth';
 
 function safeNextPath(value: unknown): string {
   return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') && !value.includes('\\')
@@ -55,7 +56,13 @@ function frontendRedirect(res: express.Response, path: string): void {
   res.redirect(302, new URL(path, config.clientOrigins[0]).toString());
 }
 
-function googleErrorRedirect(res: express.Response, error: string): void {
+function googleErrorRedirect(res: express.Response, error: string, nativeApp = false): void {
+  if (nativeApp) {
+    const url = new URL('/login', NATIVE_AUTH_SCHEME);
+    url.searchParams.set('google_error', error);
+    res.redirect(302, url.toString());
+    return;
+  }
   const url = new URL('/auth/login', config.clientOrigins[0]);
   url.searchParams.set('google_error', error);
   frontendRedirect(res, `${url.pathname}${url.search}`);
@@ -91,8 +98,9 @@ function googleUsername(name: string | undefined): string {
 }
 
 authRouter.get('/google', (req, res) => {
+  const nativeApp = req.query.native === '1';
   if (!config.googleClientId || !config.googleClientSecret) {
-    googleErrorRedirect(res, 'google_not_configured');
+    googleErrorRedirect(res, 'google_not_configured', nativeApp);
     return;
   }
   const now = Date.now();
@@ -100,7 +108,7 @@ authRouter.get('/google', (req, res) => {
     if (attempt.expiresAt <= now) googleStates.delete(state);
   }
   const state = randomBytes(32).toString('hex');
-  googleStates.set(state, { next: safeNextPath(req.query.next), expiresAt: now + GOOGLE_STATE_TTL });
+  googleStates.set(state, { next: safeNextPath(req.query.next), nativeApp, expiresAt: now + GOOGLE_STATE_TTL });
   res.cookie(GOOGLE_STATE_COOKIE, state, { ...googleCookieOptions, maxAge: GOOGLE_STATE_TTL });
 
   const authorizationUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
@@ -121,15 +129,15 @@ authRouter.get('/google/callback', async (req, res) => {
   googleStates.delete(state);
   res.clearCookie(GOOGLE_STATE_COOKIE, googleCookieOptions);
   if (!attempt || attempt.expiresAt <= Date.now() || requestCookie(req, GOOGLE_STATE_COOKIE) !== state) {
-    googleErrorRedirect(res, 'google_state_invalid');
+    googleErrorRedirect(res, 'google_state_invalid', attempt?.nativeApp ?? false);
     return;
   }
   if (typeof req.query.error === 'string') {
-    googleErrorRedirect(res, 'google_cancelled');
+    googleErrorRedirect(res, 'google_cancelled', attempt.nativeApp);
     return;
   }
   if (typeof req.query.code !== 'string') {
-    googleErrorRedirect(res, 'google_failed');
+    googleErrorRedirect(res, 'google_failed', attempt.nativeApp);
     return;
   }
 
@@ -160,7 +168,7 @@ authRouter.get('/google/callback', async (req, res) => {
       name?: string;
     };
     if (!profile.sub || !profile.email || profile.email_verified !== true) {
-      googleErrorRedirect(res, 'google_email_unverified');
+      googleErrorRedirect(res, 'google_email_unverified', attempt.nativeApp);
       return;
     }
 
@@ -168,7 +176,7 @@ authRouter.get('/google/callback', async (req, res) => {
     let user = findUserByEmail(email);
     if (!user) {
       if (getSetting('registration_open', 'true') !== 'true') {
-        googleErrorRedirect(res, 'registration_closed');
+        googleErrorRedirect(res, 'registration_closed', attempt.nativeApp);
         return;
       }
       user = createUser({ username: googleUsername(profile.name), email, locale: 'ar', avatar: 'wolf' });
@@ -176,7 +184,7 @@ authRouter.get('/google/callback', async (req, res) => {
 
     const ban = isUserBanned(user);
     if (ban.banned) {
-      googleErrorRedirect(res, 'banned');
+      googleErrorRedirect(res, 'banned', attempt.nativeApp);
       return;
     }
     run('UPDATE users SET last_seen = ?, failed_logins = 0, locked_until = NULL WHERE id = ?', Date.now(), user.id);
@@ -186,13 +194,15 @@ authRouter.get('/google/callback', async (req, res) => {
     }
     const code = randomBytes(32).toString('hex');
     googleCodes.set(code, { auth: authResponse(findUserById(user.id)), expiresAt: now + GOOGLE_CODE_TTL });
-    const callbackUrl = new URL('/auth/google/callback', config.clientOrigins[0]);
+    const callbackUrl = attempt.nativeApp
+      ? new URL('/google/callback', NATIVE_AUTH_SCHEME)
+      : new URL('/auth/google/callback', config.clientOrigins[0]);
     callbackUrl.searchParams.set('code', code);
     callbackUrl.searchParams.set('next', attempt.next);
     res.redirect(302, callbackUrl.toString());
   } catch (error) {
     console.error('[auth] Google sign-in failed', error);
-    googleErrorRedirect(res, 'google_failed');
+    googleErrorRedirect(res, 'google_failed', attempt.nativeApp);
   }
 });
 

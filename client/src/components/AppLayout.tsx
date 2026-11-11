@@ -29,6 +29,7 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { Avatar } from './Avatar';
 import { Logo } from './Logo';
 import { NotificationCenter } from './NotificationCenter';
+import { AppUpdatePrompt } from './AppUpdatePrompt';
 import { cn } from '@/lib/format';
 
 const LINKS = [
@@ -399,6 +400,7 @@ export function AppLayout({ children }: { children?: ReactNode }) {
         تجاوز إلى المحتوى
       </a>
       <NavBar />
+      <AppUpdatePrompt />
       <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-2.5 py-4 sm:px-5 sm:py-8">
         {children ?? <Outlet />}
       </main>

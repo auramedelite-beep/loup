@@ -1,9 +1,20 @@
 [build]
-  command = "npm run build:client"
+  command = "npm run build:client && node scripts/copy-android-apk.mjs"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "24"
+
+[[headers]]
+  for = "/app-update.json"
+  [headers.values]
+    Cache-Control = "no-store, max-age=0"
+
+[[headers]]
+  for = "/downloads/*.apk"
+  [headers.values]
+    Content-Type = "application/vnd.android.package-archive"
+    Content-Disposition = "attachment"
 
 [[redirects]]
   from = "/*"

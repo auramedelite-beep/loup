@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { Bell, Check, CheckCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { api, errorCode } from '@/lib/api';
 import type { NotificationItem } from '@/types';
 
@@ -14,6 +17,7 @@ interface NotificationResponse {
 export function NotificationCenter() {
   const { t } = useTranslation();
   const { user, setUnreadNotifications } = useAuth();
+  const { settings, requestNotifications } = useSettings();
   const toast = useToast();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [open, setOpen] = useState(false);
@@ -28,12 +32,42 @@ export function NotificationCenter() {
       const fresh = result.notifications.filter((item) => !seenIds.current.has(item.id));
       if (initialized.current) {
         for (const item of fresh.reverse()) {
-          toast.info(
-            t(`notifications.${item.type}`, {
-              ...item.payload,
-              defaultValue: t('notifications.system'),
-            }),
-          );
+          const message = t(`notifications.${item.type}`, {
+            ...item.payload,
+            defaultValue: t('notifications.system'),
+          });
+          toast.info(message);
+          if (settings.notifications && Capacitor.isNativePlatform()) {
+            try {
+              const permission = await LocalNotifications.checkPermissions();
+              if (permission.display === 'granted') {
+                await LocalNotifications.schedule({
+                  notifications: [
+                    {
+                      id: (Date.now() % 2_147_483_647) || 1,
+                      title: 'LOUP-GAROU DZ',
+                      body: message,
+                      schedule: { at: new Date(Date.now() + 1000) },
+                    },
+                  ],
+                });
+              }
+            } catch (notificationError) {
+              console.error('[notifications] Failed to display Android notification', notificationError);
+              toast.error(t('notifications.permissionError'));
+            }
+          } else if (
+            settings.notifications &&
+            !Capacitor.isNativePlatform() &&
+            typeof Notification !== 'undefined' &&
+            Notification.permission === 'granted'
+          ) {
+            try {
+              new Notification(t('notifications.title'), { body: message, icon: '/icon.svg' });
+            } catch (notificationError) {
+              console.error('[notifications] Failed to display browser notification', notificationError);
+            }
+          }
         }
       }
       seenIds.current = new Set(result.notifications.map((item) => item.id));
@@ -45,7 +79,7 @@ export function NotificationCenter() {
       console.error('[notifications] Failed to load notifications', loadError);
       setError(errorCode(loadError));
     }
-  }, [setUnreadNotifications, t, toast]);
+  }, [setUnreadNotifications, settings.notifications, t, toast]);
 
   useEffect(() => {
     if (!user || user.isGuest) {
@@ -106,6 +140,15 @@ export function NotificationCenter() {
   if (!user || user.isGuest) return null;
 
   const unread = notifications.filter((item) => !item.readAt).length;
+  const enableNotifications = async () => {
+    try {
+      const granted = await requestNotifications();
+      toast.info(t(granted ? 'notifications.permissionGranted' : 'notifications.permissionDenied'));
+    } catch (permissionError) {
+      console.error('[notifications] Failed to request permission', permissionError);
+      toast.error(t('notifications.permissionError'));
+    }
+  };
 
   return (
     <div className="relative" ref={panelRef}>
@@ -148,6 +191,14 @@ export function NotificationCenter() {
               </button>
             )}
           </div>
+          {!settings.notifications && (
+            <div className="border-b border-white/[0.06] px-3 py-2.5">
+              <button type="button" className="btn-primary w-full text-xs" onClick={() => void enableNotifications()}>
+                <Bell size={14} />
+                {t('notifications.enable')}
+              </button>
+            </div>
+          )}
           {error && (
             <p className="px-3 py-2 text-xs text-blood-300" role="alert">
               {t(`errors.${error}`, { defaultValue: t('errors.unknown_error') })}

@@ -1,6 +1,8 @@
-import { Navigate, Route, Routes, NavLink } from 'react-router-dom';
+import { Navigate, Route, Routes, NavLink, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
+import { App as CapacitorApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,6 +34,7 @@ const routes = [
 
 /* ── Main App ──────────────────────────────────────────────────────────── */
 export function App() {
+  const navigate = useNavigate();
   const { user, loading: authLoading, isAdmin } = useAuth();
   const { t } = useTranslation();
 
@@ -48,12 +51,76 @@ export function App() {
       try {
         await StatusBar.setOverlaysWebView({ overlay: false });
         await StatusBar.setBackgroundColor({ color: '#0b0b12' });
-        await StatusBar.setStyle({ style: Style.Light });
+        await StatusBar.setStyle({ style: Style.Dark });
       } catch (error) {
         console.error('[android] Failed to configure system status bar', error);
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let disposed = false;
+    let lastUrl = '';
+    let removeUrlListener: (() => Promise<void>) | undefined;
+    const handleAppUrl = (rawUrl: string) => {
+      if (rawUrl === lastUrl) return;
+      lastUrl = rawUrl;
+
+      try {
+        const url = new URL(rawUrl);
+        if (url.protocol !== 'dz.loupgarou.game:' || url.hostname !== 'auth') return;
+
+        if (url.pathname === '/google/callback') {
+          const code = url.searchParams.get('code');
+          if (!code) {
+            navigate('/auth/login?google_error=google_code_invalid', { replace: true });
+          } else {
+            const callback = new URLSearchParams({ code });
+            callback.set('next', url.searchParams.get('next') ?? '/rooms');
+            navigate(`/auth/google/callback?${callback.toString()}`, { replace: true });
+          }
+        } else if (url.pathname === '/login') {
+          const error = url.searchParams.get('google_error');
+          navigate(error ? `/auth/login?google_error=${encodeURIComponent(error)}` : '/auth/login', {
+            replace: true,
+          });
+        }
+
+        void Browser.close().catch((error: unknown) =>
+          console.error('[auth] Failed to close Google sign-in browser', error),
+        );
+      } catch (error) {
+        console.error('[auth] Invalid app callback URL', error);
+      }
+    };
+
+    void CapacitorApp.addListener('appUrlOpen', ({ url }) => handleAppUrl(url))
+      .then((listener) => {
+        if (disposed) {
+          void listener.remove();
+          return;
+        }
+        removeUrlListener = () => listener.remove();
+      })
+      .catch((error: unknown) => console.error('[auth] Failed to register app URL handler', error));
+
+    void CapacitorApp.getLaunchUrl()
+      .then((launch) => {
+        if (launch?.url) handleAppUrl(launch.url);
+      })
+      .catch((error: unknown) => console.error('[auth] Failed to read app launch URL', error));
+
+    return () => {
+      disposed = true;
+      if (removeUrlListener) {
+        void removeUrlListener().catch((error: unknown) =>
+          console.error('[auth] Failed to remove app URL handler', error),
+        );
+      }
+    };
+  }, [navigate]);
 
   /* ── Set dir/lang for RTL ─────────────────────────────────────────────── */
   useEffect(() => {

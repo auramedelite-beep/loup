@@ -1121,6 +1121,10 @@ const ar = {
   notifications: {
     title: 'الإشعارات',
     empty: 'لا إشعارات.',
+    enable: 'تفعيل إشعارات التطبيق',
+    permissionGranted: 'تم تفعيل الإشعارات.',
+    permissionDenied: 'لم يُسمح بالإشعارات. يمكنك تفعيلها من إعدادات الجهاز.',
+    permissionError: 'تعذر طلب إذن الإشعارات. حاول مجددًا.',
     friend_request: 'أرسل لك {{fromUsername}} طلب صداقة.',
     friend_accepted: 'أنتما صديقان الآن.',
     room_invite: 'دعاك {{fromUsername}} إلى الغرفة {{roomCode}}.',

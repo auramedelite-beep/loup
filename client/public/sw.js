@@ -27,6 +27,10 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api') || url.pathname.startsWith('/socket.io')) return;
+  if (url.pathname === '/app-update.json') {
+    event.respondWith(fetch(request, { cache: 'no-store' }));
+    return;
+  }
 
   // Navigations: network-first, fall back to the cached shell.
   if (request.mode === 'navigate') {

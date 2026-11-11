@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Browser } from '@capacitor/browser';
+import { Capacitor } from '@capacitor/core';
 import { AlertCircle, ArrowRight, Beaker, Check, Crosshair, Eye, EyeOff, KeyRound, Mail, Moon, PawPrint, UserRound } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
@@ -257,6 +259,16 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             <a
               href={`${API_BASE}/api/auth/google?next=${encodeURIComponent(next)}`}
               className="btn-ghost flex w-full items-center justify-center gap-2"
+              onClick={(event) => {
+                if (!Capacitor.isNativePlatform()) return;
+                event.preventDefault();
+                void Browser.open({
+                  url: `${API_BASE}/api/auth/google?native=1&next=${encodeURIComponent(next)}`,
+                }).catch((openError: unknown) => {
+                  console.error('[auth] Failed to open Google sign-in', openError);
+                  setError(translateError(errorCode(openError)));
+                });
+              }}
             >
               <span className="font-display text-lg font-bold text-[#4285f4]" aria-hidden>G</span>
               {t('auth.continueWithGoogle')}

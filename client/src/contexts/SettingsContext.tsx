@@ -8,6 +8,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { Capacitor } from '@capacitor/core';
 import { api } from '@/lib/api';
 import { audio } from '@/lib/audio';
 import { useAuth } from './AuthContext';
@@ -28,7 +30,7 @@ interface SettingsContextValue {
   toggleMusic: () => void;
   save: () => Promise<void>;
   saving: boolean;
-  requestNotifications: () => Promise<void>;
+  requestNotifications: () => Promise<boolean>;
 }
 
 const STORAGE_KEY = 'lgdz.settings';
@@ -90,6 +92,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(() => ({ ...DEFAULTS, ...readStored() }));
   const [saving, setSaving] = useState(false);
   const appliedUser = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    void LocalNotifications.checkPermissions()
+      .then(({ display }) => {
+        setSettings((current) => ({ ...current, notifications: display === 'granted' }));
+      })
+      .catch((error: unknown) => console.error('[notifications] Failed to check Android permission', error));
+  }, []);
 
   // Merge account-level settings once per signed-in user.
   useEffect(() => {
@@ -169,17 +180,28 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [settings, user]);
 
   const requestNotifications = useCallback(async () => {
-    if (typeof Notification === 'undefined') {
-      update({ notifications: false });
-      return;
+    let granted = false;
+    if (Capacitor.isNativePlatform()) {
+      const current = await LocalNotifications.checkPermissions();
+      const result =
+        current.display === 'granted' ? current : await LocalNotifications.requestPermissions();
+      granted = result.display === 'granted';
+    } else if (typeof Notification !== 'undefined') {
+      const permission =
+        Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+      granted = permission === 'granted';
     }
-    if (Notification.permission === 'granted') {
-      update({ notifications: true });
-      return;
+
+    const nextSettings = { ...settings, notifications: granted };
+    update({ notifications: granted });
+    if (user && !user.isGuest) {
+      await api('/api/profile/me', {
+        method: 'PATCH',
+        body: { settings: nextSettings },
+      });
     }
-    const permission = await Notification.requestPermission();
-    update({ notifications: permission === 'granted' });
-  }, [update]);
+    return granted;
+  }, [settings, update, user]);
 
   const value = useMemo<SettingsContextValue>(
     () => ({ settings, update, toggleMusic, save, saving, requestNotifications }),

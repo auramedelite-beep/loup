@@ -119,6 +119,25 @@ npm install
 npm run android:apk
 ```
 
+Google sign-in in Android uses the system browser and returns to the app through
+the `dz.loupgarou.game://auth` deep link. Notification permission is requested
+from the in-app notifications panel; Android notifications are generated while
+the app is active and polling for account notifications.
+
+### Android app updates
+
+The Android app checks `client/public/app-update.json` on launch and when it
+returns to the foreground. To publish an update, increment `versionCode` and
+`versionName` in `android/app/build.gradle`, update the manifest's version, build
+the APK, and copy it to `app-release/loup-garou-dz.apk`. Netlify publishes this
+file at the download URL in the manifest. Android downloads the APK and asks the
+user to confirm installation; uninstalling the previous app is not required.
+Updates must be signed with the same signing key as the installed app.
+
+The APK that predates the update checker cannot display its own update prompt.
+Install the first APK that includes the checker manually; later versions can
+notify users from inside the app.
+
 The APK is written to
 `android/app/build/outputs/apk/debug/app-debug.apk`. This debug-signed APK can
 be installed directly for testing; publishing on Google Play requires a
