@@ -15,6 +15,7 @@ import { RoomsPage } from '@/pages/RoomsPage';
 import { RoomPage } from '@/pages/RoomPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
+import { FriendsPage } from '@/pages/FriendsPage';
 import { HowToPlayPage } from '@/pages/HowToPlayPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -32,6 +33,7 @@ const routes = [
   { path: '/settings', element: <SettingsPage /> },
   { path: '/profile', element: <ProfilePage /> },
   { path: '/profile/:id', element: <ProfilePage /> },
+  { path: '/friends', element: <FriendsPage /> },
   { path: '/how-to-play', element: <HowToPlayPage /> },
   { path: '/admin', element: <div>لوحة الإدارة</div>, isAdmin: true },
 ];
@@ -148,7 +150,7 @@ export function App() {
               key={route.path}
               path={route.path}
               element={
-                route.path === '/settings' || route.path.startsWith('/profile') ? (
+                route.path === '/settings' || route.path.startsWith('/profile') || route.path === '/friends' ? (
                   <ProtectedRoute>{element}</ProtectedRoute>
                 ) : (
                   element
