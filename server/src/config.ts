@@ -33,7 +33,9 @@ export const config = {
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean),
   adminPassword: process.env.ADMIN_PASSWORD || 'Admin@12345',
-  trustProxy: process.env.TRUST_PROXY === 'true',
+  trustProxy:
+    process.env.TRUST_PROXY === 'true' ||
+    (isProduction && process.env.TRUST_PROXY !== 'false'),
   maxRooms: Number(process.env.MAX_ROOMS || 500),
   botFillTimeoutMs: Number(process.env.BOT_FILL_TIMEOUT_MS || 8000),
   googleClientId: process.env.GOOGLE_CLIENT_ID || '',

@@ -107,6 +107,10 @@ a separate Node.js host that supports persistent WebSocket connections. Set
 and set `CLIENT_ORIGIN` on the server to the Netlify site origin. The game
 server uses SQLite, so use persistent storage for its `DATABASE_PATH`; an
 ephemeral filesystem can lose accounts and game data after a restart.
+When running in production behind Render's proxy, the server trusts one proxy
+hop by default so rate limits use the visitor's forwarded IP rather than a
+shared proxy address. Set `TRUST_PROXY=false` only when the server is directly
+exposed without a trusted proxy.
 
 ### Android APK
 
