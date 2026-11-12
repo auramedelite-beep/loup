@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { getSetting, get, run, tx } from '../db';
 import { config } from '../config';
 import { authenticate, optionalAuth } from '../auth/middleware';
-import { signToken } from '../auth/jwt';
+import { revokeSession, revokeUserSessions, signToken } from '../auth/jwt';
 import { sendPasswordResetEmail, mailerConfigured } from '../services/mailer';
 import {
   achievementsFor,
@@ -43,7 +43,7 @@ const GOOGLE_STATE_COOKIE = 'lgdz_google_state';
 const GOOGLE_STATE_TTL = 10 * 60 * 1000;
 const GOOGLE_CODE_TTL = 2 * 60 * 1000;
 const googleStates = new Map<string, { next: string; nativeApp: boolean; expiresAt: number }>();
-const googleCodes = new Map<string, { auth: ReturnType<typeof authResponse>; expiresAt: number }>();
+const googleCodes = new Map<string, { userId: string; expiresAt: number }>();
 const NATIVE_AUTH_SCHEME = 'dz.loupgarou.game://auth';
 
 function safeNextPath(value: unknown): string {
@@ -193,7 +193,7 @@ authRouter.get('/google/callback', async (req, res) => {
       if (exchange.expiresAt <= now) googleCodes.delete(code);
     }
     const code = randomBytes(32).toString('hex');
-    googleCodes.set(code, { auth: authResponse(findUserById(user.id)), expiresAt: now + GOOGLE_CODE_TTL });
+    googleCodes.set(code, { userId: user.id, expiresAt: now + GOOGLE_CODE_TTL });
     const callbackUrl = attempt.nativeApp
       ? new URL('/google/callback', NATIVE_AUTH_SCHEME)
       : new URL('/auth/google/callback', config.clientOrigins[0]);
@@ -218,7 +218,7 @@ authRouter.post('/google/exchange', authLimiter, (req, res) => {
     res.status(401).json({ error: 'google_code_invalid' });
     return;
   }
-  res.json(exchange.auth);
+  res.json(authResponse(findUserById(exchange.userId)));
 });
 
 authRouter.post('/register', authLimiter, (_req, res) => {
@@ -284,6 +284,7 @@ authRouter.get('/me', authenticate, (req, res) => {
     return;
   }
   res.json({
+    ...(!req.auth!.sessionId ? { token: signToken(user) } : {}),
     user: toPublicUser(user),
     achievements: achievementsFor(user.id),
     unreadNotifications: unreadNotificationCount(user.id),
@@ -293,6 +294,9 @@ authRouter.get('/me', authenticate, (req, res) => {
 authRouter.post('/logout', optionalAuth, (req, res) => {
   if (req.auth && req.body?.allDevices === true) {
     run('UPDATE users SET token_version = token_version + 1 WHERE id = ?', req.auth.id);
+    revokeUserSessions(req.auth.id);
+  } else if (req.auth?.sessionId) {
+    revokeSession(req.auth.sessionId);
   }
   res.json({ ok: true });
 });

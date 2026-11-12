@@ -223,12 +223,19 @@ CREATE TABLE IF NOT EXISTS password_resets (
   created_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS auth_sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_profiles_rating ON profiles(rating DESC);
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_user ON auth_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_games_started ON games(started_at DESC);
 CREATE INDEX IF NOT EXISTS idx_game_players_user ON game_players(user_id);
 CREATE INDEX IF NOT EXISTS idx_chat_room ON chat_messages(room_id, created_at);

@@ -17,6 +17,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     role: result.user.role,
     isGuest: Boolean(result.user.is_guest),
     tokenVersion: result.user.token_version,
+    sessionId: result.sessionId,
   };
   next();
 }
@@ -30,6 +31,7 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction): 
       role: result.user.role,
       isGuest: Boolean(result.user.is_guest),
       tokenVersion: result.user.token_version,
+      sessionId: result.sessionId,
     };
   }
   next();

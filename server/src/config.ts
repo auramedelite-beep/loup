@@ -26,7 +26,6 @@ export const config = {
     .map((s) => s.trim())
     .filter(Boolean),
   jwtSecret: process.env.JWT_SECRET || 'dev-only-secret-change-me-please-1234567890',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   databasePath: process.env.DATABASE_PATH || 'data/loupgarou.db',
   adminUsernames: (process.env.ADMIN_USERNAMES || 'admin')
     .split(',')

@@ -114,6 +114,7 @@ adminRouter.post('/users/:id/ban', (req, res) => {
       parsed.data.reason,
       user.id,
     );
+    run('DELETE FROM auth_sessions WHERE user_id = ?', user.id);
   });
   roomManager.leaveQueue(user.id);
   roomManager.disconnectUser(user.id);
@@ -233,6 +234,7 @@ adminRouter.post('/reports/:id', (req, res) => {
         `Report upheld: ${parsed.data.note ?? 'moderation decision'}`,
         report.target_id,
       );
+      run('DELETE FROM auth_sessions WHERE user_id = ?', report.target_id);
     });
     roomManager.disconnectUser(report.target_id);
   }

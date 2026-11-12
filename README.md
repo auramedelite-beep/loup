@@ -129,6 +129,10 @@ from the in-app notifications panel; Android notifications are generated while
 the app is active and polling for account notifications. The API allows
 Capacitor's local WebView origins (`https://localhost` and
 `capacitor://localhost`) so native sign-in completion can exchange its code.
+Sign-in is retained on the device when the app is closed and reopened. Sessions
+remain active until the user signs out; signing out revokes that device's
+session, while signing out of all devices, password resets, and bans invalidate
+the user's active sessions.
 
 ### Android app updates
 

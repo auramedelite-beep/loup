@@ -7,6 +7,7 @@ declare global {
         role: 'player' | 'admin';
         isGuest: boolean;
         tokenVersion: number;
+        sessionId: string | null;
       };
     }
   }

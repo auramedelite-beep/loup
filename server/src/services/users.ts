@@ -207,11 +207,14 @@ export function verifyPassword(user: UserRow, password: string): boolean {
 }
 
 export function setPassword(userId: string, password: string): void {
-  run(
-    'UPDATE users SET password_hash = ?, token_version = token_version + 1, failed_logins = 0, locked_until = NULL WHERE id = ?',
-    bcrypt.hashSync(password, 10),
-    userId,
-  );
+  tx(() => {
+    run(
+      'UPDATE users SET password_hash = ?, token_version = token_version + 1, failed_logins = 0, locked_until = NULL WHERE id = ?',
+      bcrypt.hashSync(password, 10),
+      userId,
+    );
+    run('DELETE FROM auth_sessions WHERE user_id = ?', userId);
+  });
 }
 
 export function touchUser(userId: string): void {

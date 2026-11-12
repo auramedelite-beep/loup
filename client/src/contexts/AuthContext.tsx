@@ -78,7 +78,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: PublicUser;
         achievements: Achievement[];
         unreadNotifications: number;
+        token?: string;
       }>('/api/auth/me');
+      if (data.token) setToken(data.token);
       storeUser(data.user);
       setUser(data.user);
       setAchievements(data.achievements ?? []);
