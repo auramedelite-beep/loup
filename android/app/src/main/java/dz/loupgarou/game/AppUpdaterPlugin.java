@@ -67,10 +67,20 @@ public class AppUpdaterPlugin extends Plugin {
         }
 
         DownloadManager manager = (DownloadManager) getContext().getSystemService(Context.DOWNLOAD_SERVICE);
+        if (manager == null) {
+            call.reject("Android Download Manager is unavailable");
+            return;
+        }
         DownloadManager.Query query = new DownloadManager.Query().setFilterById(id);
         try (Cursor cursor = manager.query(query)) {
             if (cursor == null || !cursor.moveToFirst()) {
-                call.reject("Update download was not found");
+                JSObject result = new JSObject();
+                result.put("status", "pending");
+                result.put("reason", 0);
+                result.put("downloadedBytes", 0);
+                result.put("totalBytes", 0);
+                result.put("progress", 0);
+                call.resolve(result);
                 return;
             }
 

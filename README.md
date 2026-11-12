@@ -148,6 +148,8 @@ be installed directly for testing; publishing on Google Play requires a
 separately signed release build. Set the server origin in
 `client/.env.production` before building if it changes. Android launcher icons
 and installable-web-app icons are generated from the supplied wolf artwork.
+The Android sync step removes any stale downloaded APK from the WebView assets
+before packaging, preventing an old installer from being nested in new APKs.
 
 ### Available Scripts
 

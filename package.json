@@ -1,6 +1,6 @@
 {
   "name": "loup-garou-dz",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "private": true,
   "description": "LOUP-GAROU DZ — premium real-time multiplayer Werewolf for Algeria",
   "engines": {
@@ -13,7 +13,7 @@
     "build": "npm run build:server && npm run build:client",
     "build:server": "tsc -p server/tsconfig.json && node scripts/copy-assets.mjs",
     "build:client": "vite build --config client/vite.config.ts",
-    "android:sync": "npm run build:client && cap sync android",
+    "android:sync": "npm run build:client && node scripts/clean-android-web-assets.mjs && cap sync android",
     "android:apk": "npm run android:sync && cd android && gradlew assembleDebug",
     "start": "node --enable-source-maps dist-server/index.js",
     "test": "vitest run",

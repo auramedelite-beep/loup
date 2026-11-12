@@ -89,6 +89,7 @@ export function AppUpdatePrompt() {
   const [error, setError] = useState<string | null>(null);
   const pollInFlight = useRef(false);
   const restoreInFlight = useRef(false);
+  const pollFailures = useRef(0);
 
   const checkForUpdate = useCallback(async () => {
     if (!Capacitor.isNativePlatform()) return;
@@ -121,8 +122,14 @@ export function AppUpdatePrompt() {
         restoreInFlight.current = true;
         try {
           const currentDownload = await AppUpdater.getDownloadState({ downloadId: savedId });
+          pollFailures.current = 0;
           setDownloadId(savedId);
           setDownload(currentDownload);
+          setError(
+            currentDownload.status === 'failed'
+              ? 'تعذر تنزيل التحديث. تحقق من اتصال الإنترنت ثم أعد المحاولة.'
+              : null,
+          );
         } catch (restoreError) {
           console.warn('[app-update] Previous download is no longer available', restoreError);
           storeDownloadId(null);
@@ -177,15 +184,22 @@ export function AppUpdatePrompt() {
       try {
         const next = await AppUpdater.getDownloadState({ downloadId });
         if (!disposed) {
+          pollFailures.current = 0;
           setDownload(next);
-          if (next.status === 'failed') {
-            setError('تعذر تنزيل التحديث. تحقق من اتصال الإنترنت وحاول مجددًا.');
-          }
+          setError(
+            next.status === 'failed'
+              ? 'تعذر تنزيل التحديث. تحقق من اتصال الإنترنت ثم أعد المحاولة.'
+              : null,
+          );
         }
       } catch (pollError) {
         if (!disposed) {
           console.error('[app-update] Failed to read download progress', pollError);
-          setError('تعذر متابعة التنزيل. أعد المحاولة.');
+          pollFailures.current += 1;
+          if (pollFailures.current >= 5) {
+            setDownload((current) => (current ? { ...current, status: 'failed' } : current));
+            setError('تعذر الاتصال بمدير تنزيلات Android. أعد المحاولة لبدء التنزيل من جديد.');
+          }
         }
       } finally {
         pollInFlight.current = false;
@@ -203,6 +217,7 @@ export function AppUpdatePrompt() {
 
   const startDownload = async () => {
     setBusy(true);
+    pollFailures.current = 0;
     setError(null);
     setPermissionRequired(false);
     try {
@@ -230,6 +245,7 @@ export function AppUpdatePrompt() {
   const cancelDownload = async () => {
     if (!downloadId) return;
     setBusy(true);
+    pollFailures.current = 0;
     try {
       await AppUpdater.cancelDownload({ downloadId });
       storeDownloadId(null);
@@ -277,7 +293,13 @@ export function AppUpdatePrompt() {
           </div>
           <div className="min-w-0 flex-1">
             <h2 id="app-update-title" className="text-lg font-bold text-parchment-100">
-              {isComplete ? 'اكتمل تنزيل التحديث' : isDownloading ? 'جارٍ تنزيل التحديث' : 'يتوفر تحديث جديد'}
+              {isComplete
+                ? 'اكتمل تنزيل التحديث'
+                : download?.status === 'failed'
+                  ? 'تعذر تنزيل التحديث'
+                  : isDownloading
+                    ? 'جارٍ تنزيل التحديث'
+                    : 'يتوفر تحديث جديد'}
             </h2>
             <p className="mt-1 text-sm text-mist">الإصدار {update.versionName}</p>
           </div>
@@ -326,13 +348,20 @@ export function AppUpdatePrompt() {
           <div className="mt-4 rounded-xl border border-gold-500/20 bg-gold-500/[0.06] p-3 text-sm leading-relaxed text-parchment-200">
             اسمح للتطبيق بتثبيت التحديث من إعدادات Android، ثم ارجع واضغط «متابعة التثبيت».
           </div>
+        ) : download?.status === 'failed' ? (
+          <div
+            className="mt-4 rounded-xl border border-blood-500/20 bg-blood-500/[0.06] p-3 text-sm leading-relaxed text-parchment-200"
+            role="alert"
+          >
+            {error ?? 'تعذر إكمال تنزيل التحديث. تحقق من اتصال الإنترنت ثم أعد المحاولة.'}
+          </div>
         ) : (
           <p className="mt-4 text-sm leading-relaxed text-mist">
             سننزّل التحديث بأمان في الخلفية، ثم نفتح مثبت Android لتأكيد التثبيت. لن تحتاج إلى حذف التطبيق، وستبقى بياناتك محفوظة.
           </p>
         )}
 
-        {error && (
+        {error && download?.status !== 'failed' && (
           <p className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-blood-300" role="alert">
             <AlertCircle size={16} className="mt-0.5 shrink-0" />
             {error}
