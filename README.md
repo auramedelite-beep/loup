@@ -137,10 +137,10 @@ the user's active sessions.
 ### Android app updates
 
 The Android app checks `client/public/app-update.json` on launch and when it
-returns to the foreground. Native updates use Android Download Manager, show
-download progress, can be resumed or cancelled, and open the Android installer
-when complete. To publish an update, increment `versionCode` and `versionName`
-in `android/app/build.gradle`, update the manifest's version, build the APK, and
+returns to the foreground. Updates download directly in the app, show progress,
+can be cancelled, and open the Android installer when complete. To publish an
+update, increment `versionCode` and `versionName` in
+`android/app/build.gradle`, update the manifest's version, build the APK, and
 copy it to `app-release/loup-garou-dz.apk`. Netlify publishes this file at the
 download URL in the manifest. Android asks the user to confirm installation;
 uninstalling the previous app is not required. Updates must be signed with the

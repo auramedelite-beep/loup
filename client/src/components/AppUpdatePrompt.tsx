@@ -196,9 +196,9 @@ export function AppUpdatePrompt() {
         if (!disposed) {
           console.error('[app-update] Failed to read download progress', pollError);
           pollFailures.current += 1;
-          if (pollFailures.current >= 5) {
+          if (pollFailures.current >= 15) {
             setDownload((current) => (current ? { ...current, status: 'failed' } : current));
-            setError('تعذر الاتصال بمدير تنزيلات Android. أعد المحاولة لبدء التنزيل من جديد.');
+            setError('تعذر قراءة تقدم التنزيل. أعد المحاولة لبدء التنزيل من جديد.');
           }
         }
       } finally {
