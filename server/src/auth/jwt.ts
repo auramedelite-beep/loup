@@ -11,7 +11,10 @@ export interface TokenPayload {
   guest: boolean;
   ver: number;
   sid?: string;
+  exp?: number;
 }
+
+const LEGACY_TOKEN_MIGRATION_GRACE_SECONDS = 30 * 24 * 60 * 60;
 
 export function signToken(user: UserRow): string {
   const sessionId = randomUUID();
@@ -36,11 +39,20 @@ export function resolveToken(token: string | null | undefined): ResolveTokenResu
   if (!token) return { ok: false, error: 'invalid' };
   let payload: TokenPayload;
   try {
-    payload = jwt.verify(token, config.jwtSecret) as TokenPayload;
+    payload = jwt.verify(token, config.jwtSecret, { ignoreExpiration: true }) as TokenPayload;
   } catch {
     return { ok: false, error: 'invalid' };
   }
   if (!payload?.sub) return { ok: false, error: 'invalid' };
+  if (!payload.sid) {
+    if (typeof payload.exp !== 'number') return { ok: false, error: 'invalid' };
+    const now = Math.floor(Date.now() / 1000);
+    if (now - payload.exp > LEGACY_TOKEN_MIGRATION_GRACE_SECONDS) {
+      return { ok: false, error: 'invalid' };
+    }
+  } else if (typeof payload.exp === 'number' && payload.exp <= Math.floor(Date.now() / 1000)) {
+    return { ok: false, error: 'invalid' };
+  }
   const user = findUserById(payload.sub);
   if (!user) return { ok: false, error: 'invalid' };
   if (user.token_version !== payload.ver) return { ok: false, error: 'invalid' };

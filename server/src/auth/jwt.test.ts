@@ -10,7 +10,7 @@ process.env.DATABASE_PATH = path.join(
 process.env.JWT_SECRET = 'test-secret-test-secret-test-secret';
 process.env.NODE_ENV = 'test';
 
-const { closeDb } = await import('../db');
+const { closeDb, run } = await import('../db');
 const { revokeSession, revokeUserSessions, resolveToken, signToken } = await import('./jwt');
 const { createUser } = await import('../services/users');
 
@@ -36,11 +36,66 @@ describe('persistent auth sessions', () => {
 
     expect(jwt.decode(token)).not.toHaveProperty('exp');
     expect(resolveToken(token).ok).toBe(true);
-
     const result = resolveToken(token);
     if (!result.ok || !result.sessionId) throw new Error('Expected a persistent session');
     revokeSession(result.sessionId);
     expect(resolveToken(token)).toEqual({ ok: false, error: 'invalid' });
+  });
+
+  it('accepts recently expired legacy tokens so /me can upgrade them to persistent sessions', () => {
+    const user = makeUser();
+    const token = jwt.sign(
+      {
+        sub: user.id,
+        username: user.username,
+        role: user.role,
+        guest: Boolean(user.is_guest),
+        ver: user.token_version,
+      },
+      process.env.JWT_SECRET!,
+      { expiresIn: -24 * 60 * 60 },
+    );
+
+    const result = resolveToken(token);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.sessionId).toBeNull();
+  });
+
+  it('rejects legacy tokens after the migration window and expired persistent tokens', () => {
+    const user = makeUser();
+    const legacyToken = jwt.sign(
+      {
+        sub: user.id,
+        username: user.username,
+        role: user.role,
+        guest: Boolean(user.is_guest),
+        ver: user.token_version,
+      },
+      process.env.JWT_SECRET!,
+      { expiresIn: -(31 * 24 * 60 * 60) },
+    );
+    const expiredSessionId = `expired-session-${suffix}`;
+    run(
+      'INSERT INTO auth_sessions (id, user_id, created_at) VALUES (?, ?, ?)',
+      expiredSessionId,
+      user.id,
+      Date.now(),
+    );
+    const persistentToken = jwt.sign(
+      {
+        sub: user.id,
+        username: user.username,
+        role: user.role,
+        guest: Boolean(user.is_guest),
+        ver: user.token_version,
+        sid: expiredSessionId,
+      },
+      process.env.JWT_SECRET!,
+      { expiresIn: -24 * 60 * 60 },
+    );
+
+    expect(resolveToken(legacyToken)).toEqual({ ok: false, error: 'invalid' });
+    expect(resolveToken(persistentToken)).toEqual({ ok: false, error: 'invalid' });
   });
 
   it('revokes one device session without signing out other devices', () => {
